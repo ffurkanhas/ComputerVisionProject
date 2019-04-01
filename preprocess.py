@@ -5,8 +5,8 @@ from PIL import Image
 from tqdm import tqdm
 
 noneCount = 0
-imagePaths = "/run/media/toorn/New Volume/CarDataSet/CompCars/data/data/image/"
-rootPath = '/run/media/toorn/New Volume/SonData/'
+imagePaths = "C:\\Users\\kpm\\Desktop\\CompCars\\data\\image"
+rootPath = 'C:\\Users\kpm\\Desktop\\CompCars\\Updated\\'
 trainPath = rootPath + "train"
 validPath = rootPath + "valid"
 testPath = rootPath + "test"
@@ -65,20 +65,20 @@ def copyImages():
     for path, subdirs, files in os.walk(imagePaths):
         for name in files:
             if fnmatch(name, pattern):
-                modelId = path.split('/').__getitem__(11)
+                modelId = path.split('\\').__getitem__(8)
                 carType = carTypeDict[modelId]
                 flag = False
                 if carType != 'none':
                     tempTypeCount[carType] += 1
                     if(tempTypeCount[carType] < 1200):
                         flag = True
-                        targetFolderPath = trainPath + "/" + carTypeDict[modelId] + "/"
+                        targetFolderPath = trainPath + "\\" + carTypeDict[modelId] + "\\"
                         new_name = carTypeDict[modelId] + "_" + str(tempTypeCount[carType]) + ".jpg"
 
                 else:
                     flag = True
                     testCount += 1
-                    targetFolderPath = testPath + "/"
+                    targetFolderPath = testPath + "\\"
                     new_name = "test_" + str(testCount) + ".jpg"
 
                 if flag:
@@ -98,24 +98,24 @@ def copyImages():
 def readImages():
     pattern = "*.jpg"
     vehicleList = list()
-    carTypeDict = getVehicleTypeDictionary()
+    carTypeDict, typesCount = getVehicleTypeDictionary()
 
     for path, subdirs, files in os.walk(imagePaths):
         for name in files:
             if fnmatch(name, pattern):
-                brandId = path.split('/').__getitem__(10)
-                modelId = path.split('/').__getitem__(11)
+                brandId = path.split('\\').__getitem__(7)
+                modelId = path.split('\\').__getitem__(8)
                 tempDictionary = dict()
                 tempDictionary['brandId'] = brandId
                 tempDictionary['modelId'] = modelId
                 tempDictionary['imagePath'] = os.path.join(path, name)
-                tempDictionary['carType'] = carTypeDict[modelId]
+                tempDictionary['carType'] = carTypeDict.get(modelId)
                 vehicleList.append(tempDictionary)
     return vehicleList
 
 
 def getTypesFromMatFile():
-    carTypeFile = '/run/media/toorn/New Volume/CarDataSet/CompCars/data/data/misc/car_type.mat'
+    carTypeFile = 'C:\\Users\\kpm\\Desktop\\CompCars\\data\\misc\\car_type.mat'
 
     mat = scipy.io.loadmat(carTypeFile)
 
@@ -132,7 +132,7 @@ def getVehicleTypeDictionary():
     types = getTypesFromMatFile()
     typesCount = dict()
     carTypeDictionary = dict()
-    carTypeListFilePath = '/run/media/toorn/New Volume/CarDataSet/CompCars/data/data/misc/attributes.txt'
+    carTypeListFilePath = 'C:\\Users\\kpm\\Desktop\\CompCars\\data\\misc\\attributes.txt'
 
     for carType in types:
         typesCount[types[carType]] = 0
@@ -151,4 +151,4 @@ def getVehicleTypeDictionary():
     return carTypeDictionary, typesCount
 
 
-copyImages()
+#copyImages()

@@ -36,11 +36,10 @@ def trainData():
     data = []
     labels = []
     count = 0
-    dataFile = open('data.txt', 'a')
-    labelFile = open('labels.txt', 'a')
+    dataFile = open('data.txt', 'w')
+    labelFile = open('labels.txt', 'w')
 
-    for car in vehicleList:
-        count += 1
+    for car in vehicleList[:40000]:
         # extract the make of the car
         make = car.get('carType')
         imagePath = car.get('imagePath')
@@ -75,9 +74,7 @@ def trainData():
         labelFile.write(str(make))
         labelFile.write("\n")
 
-        if count % 10000 == 0:
-            print(count)
-
+        count += 1
     return data, labels
 
 
@@ -107,30 +104,33 @@ model.fit(data, labels)
 print("[INFO] evaluating...")
 
 pathList = list()
-for car in vehicleList[500:510]:
+for car in vehicleList[500:600]:
     pathList.append(car.get('imagePath'))
 
 
 for (i, imagePath) in enumerate(pathList):
     # load the test image, convert it to grayscale, and resize it to
     # the canonical size
-    image = cv2.imread(imagePath)
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    logo = cv2.resize(gray, (200, 100))
+    if i < 10:
+        image = cv2.imread(imagePath)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        logo = cv2.resize(gray, (200, 100))
 
-    # extract Histogram of Oriented Gradients from the test image and
-    # predict the make of the car
-    (H, hogImage) = feature.hog(logo, orientations=9, pixels_per_cell=(10, 10),
-                                cells_per_block=(2, 2), transform_sqrt=True, block_norm="L1", visualise=True)
-    pred = model.predict(H.reshape(1, -1))[0]
+        # extract Histogram of Oriented Gradients from the test image and
+        # predict the make of the car
+        (H, hogImage) = feature.hog(logo, orientations=9, pixels_per_cell=(10, 10),
+                                    cells_per_block=(2, 2), transform_sqrt=True, block_norm="L1", visualise=True)
+        pred = model.predict(H.reshape(1, -1))[0]
 
-    # visualize the HOG image
-    hogImage = exposure.rescale_intensity(hogImage, out_range=(0, 255))
-    hogImage = hogImage.astype("uint8")
-    cv2.imshow("HOG Image #{}".format(i + 1), hogImage)
+        # visualize the HOG image
+        hogImage = exposure.rescale_intensity(hogImage, out_range=(0, 255))
+        hogImage = hogImage.astype("uint8")
+        cv2.imshow("HOG Image #{}".format(i + 1), hogImage)
 
-    # draw the prediction on the test image and display it
-    cv2.putText(image, pred.title(), (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 1.0,
-                (0, 255, 0), 3)
-    cv2.imshow("Test Image #{}".format(i + 1), image)
-    cv2.waitKey(50000)
+        # draw the prediction on the test image and display it
+        cv2.putText(image, pred.title(), (10, 35), cv2.FONT_HERSHEY_SIMPLEX, 1.0,
+                    (0, 255, 0), 3)
+        imageNewName = str(i) + '_' + str(pred.title()) + '_knn.png'
+        cv2.imwrite(imageNewName, image)
+        hogImageNewName = str(i) + '_hog_knn.png'
+        cv2.imwrite(hogImageNewName, hogImage)

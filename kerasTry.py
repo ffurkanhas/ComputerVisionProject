@@ -1,85 +1,80 @@
+from keras import Input, Model, optimizers
+from keras.applications import VGG19
+from keras.applications import Xception
+from keras.applications import ResNet50
+from keras.layers import Conv2D, BatchNormalization, Activation, SeparableConv2D, AveragePooling2D, Flatten, Dense
 from keras.preprocessing.image import ImageDataGenerator
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Convolution2D, BatchNormalization
-from keras.layers import Activation, Dropout, Flatten, Dense
-from keras import backend as K
-from deneme.pyimagesearch.smallervggnet import SmallerVGGNet
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 
-train_data_dir = '/run/media/toorn/New Volume/SonData/train/'
+train_data_dir = 'C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\train\\'
+test_data_dir = 'C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\test\\'
+
 nb_train_samples = 2000
 nb_validation_samples = 800
 epochs = 75
 batch_size = 32
 
-img_width, img_height = 100, 100
+img_width, img_height = 224, 224
 
 train_datagen = ImageDataGenerator(
     shear_range=0.2,
     zoom_range=0.2,
     horizontal_flip=True,
-    validation_split=0.2,)  # set validation split
+    rescale=1. / 255,
+    validation_split=0.2, )  # set validation split
+
+validation_datagen = ImageDataGenerator(
+    rescale=1. / 255,
+    fill_mode='nearest')
 
 train_generator = train_datagen.flow_from_directory(
     directory=train_data_dir,
     target_size=(img_height, img_width),
     batch_size=batch_size,
     class_mode='categorical',
-    subset='training', color_mode="grayscale")  # set as training data
+    shuffle=True,
+    subset='training')  # set as training data
 
-validation_generator = train_datagen.flow_from_directory(
+validation_generator = validation_datagen.flow_from_directory(
     directory=train_data_dir,
     target_size=(img_height, img_width),
     batch_size=batch_size,
     class_mode='categorical',
-    subset='validation', color_mode="grayscale")  # set as validation data
+    subset='validation',
+    save_to_dir="C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\valid")  # set as validation data
 
-model = Sequential()
-model.add(Conv2D(32, (3, 3), input_shape=(img_width, img_height, 1)))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+test_generator = train_datagen.flow_from_directory(
+    directory=test_data_dir,
+    target_size=(224, 224),
+    batch_size=1,
+    class_mode=None,
+    shuffle=False,
+    seed=42,
+    save_to_dir="C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\SmallSet\\test"
+)
 
-model.add(Conv2D(32, (3, 3)))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+base_model = VGG19(weights=None, include_top=False, input_shape=(224, 224, 3))
+x = base_model.output
+x = Flatten()(x)
+predictions = Dense(12, activation='softmax')(x)
 
-model.add(Conv2D(64, (3, 3)))
-model.add(Activation('relu'))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+model = Model(inputs=base_model.input, outputs=predictions)
 
-model.add(Flatten())
-model.add(Dense(64))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(12))
-model.add(Activation('softmax'))
+for layer in base_model.layers:
+    layer.trainable = False
 
-# Compile model
 model.compile(loss='categorical_crossentropy',
-              optimizer='rmsprop',
+              optimizer=Adam(lr=0.0001),
               metrics=['accuracy'])
 
-model.fit_generator(train_generator, steps_per_epoch=nb_train_samples // batch_size, epochs=epochs, validation_data=validation_generator, validation_steps=nb_validation_samples // batch_size)
-
-print("[INFO] compiling model...")
-model = SmallerVGGNet.build(width=img_width,
-                            height=img_height,
-                            depth=1, finalAct="sigmoid")
-
-INIT_LR = 1e-3
-EPOCHS = 75
-BS = 32
-
-opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
-
-model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
-
-print("[INFO] training network...")
-H = model.fit_generator(train_generator,
-                        validation_data=validation_generator,
-                        steps_per_epoch=1000 // BS,
-                        epochs=EPOCHS, verbose=1,
-                        validation_steps=200 // BS)
-
-model.save_weights('first_try.h5')
-model.save('first_model.h5')
+history = model.fit_generator(train_generator,
+                              steps_per_epoch=30,
+                              validation_data=validation_generator,
+                              epochs=50,
+                              verbose=1,
+                              workers=1,
+                              use_multiprocessing=False,
+                              validation_steps=3090 // 32)
+model.save('model.h5')
+model.save_weights('model_weights.h5')
+model.save_weights('model_weights_json.json')

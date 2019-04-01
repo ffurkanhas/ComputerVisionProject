@@ -3,19 +3,19 @@ from keras.models import load_model
 import numpy as np
 import pandas as pd
 
-test_data_dir = '/run/media/toorn/New Volume/SonData/test/'
-train_data_dir = '/run/media/toorn/New Volume/SonData/train/'
+test_data_dir = 'C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\SmallSet\\test\\'
+train_data_dir = 'C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\train\\'
 
 test_datagen = ImageDataGenerator()
 
 test_generator = test_datagen.flow_from_directory(
     directory=test_data_dir,
-    target_size=(100, 100),
-    color_mode="grayscale",
+    target_size=(224, 224),
     batch_size=1,
     class_mode=None,
     shuffle=False,
-    seed=42
+    seed=42,
+    save_to_dir="C:\\Users\\kpm\\Desktop\\CompCars\\Updated\\SmallSet\\test"
 )
 
 train_datagen = ImageDataGenerator(
@@ -26,12 +26,12 @@ train_datagen = ImageDataGenerator(
 
 train_generator = train_datagen.flow_from_directory(
     directory=train_data_dir,
-    target_size=(100, 100),
+    target_size=(224, 224),
     batch_size=64,
     class_mode='categorical',
-    subset='training', color_mode="grayscale")  # set as training data
+    subset='training')  # set as training data
 
-model = load_model('first_model.h5')
+model = load_model('model.h5')
 STEP_SIZE_TEST = test_generator.n//test_generator.batch_size
 test_generator.reset()
 pred = model.predict_generator(test_generator, steps=STEP_SIZE_TEST, verbose=1)
